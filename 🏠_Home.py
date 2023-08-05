@@ -4,7 +4,7 @@ import streamlit as st
 from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
-from pandasai import p
+from pandasai import PandasAI
 
 class DataSource:
     def __init__(self) -> None:
