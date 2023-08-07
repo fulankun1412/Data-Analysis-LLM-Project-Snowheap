@@ -1,10 +1,11 @@
-from common import BaseInterface
+from common.streamlitCommon import BaseInterface
 
 import streamlit as st
 from sqlalchemy import create_engine, MetaData, text
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
 from pandasai import PandasAI
+from langchain.llms import OpenAI
 
 class DataSource:
     def __init__(self) -> None:
@@ -29,30 +30,47 @@ class DataSource:
         return self.getData(SELECTED_TABLE).head(5)
     
 class LLM:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, apiKey) -> None:
+        self.apiKey = apiKey
 
-
+    def LLM_OpenAi(self, prompt):
+        llm = OpenAI(openai_api_key=self.apiKey)
+        return llm.predict(prompt)
 class HomeInterface(BaseInterface):
     def __init__(self) -> None:
         pass
     
-    def userInput(self):
+    def userInteraction(self):
         dataSource = DataSource()
+        st.text("Selected table, showing first five of data:")
         dfShow = st.empty()
-        col1, col2 = st.columns(spec=[0.7, 0.3], gap="medium")
-        with col1:
-            promptText = st.text_area(label="Input your Prompt:")
-        with col2:
-            selectedSource = st.selectbox(label="Select data source Table:", options=dataSource.table_list)
+        st.divider()
         
-        st.dataframe(data=DataSource().getHeadData(selectedSource), use_container_width=True)
+        col1, col2 = st.columns(spec=[0.5, 0.5], gap="medium")
+        with col1:
+            selectedSourceTable = st.selectbox(label="Select data source table:", options=dataSource.table_list)
+        with col2:
+            uploadedDocument = st.file_uploader(label="Upload your document:", )
+        dfShow.dataframe(data=DataSource().getHeadData(selectedSourceTable), use_container_width=True)
+        promptText = st.text_area(label="Input your prompt:")
+        apiKey = st.text_input(label="Input your OpenAI API key:")
+
+        if st.button("Get Answer"):
+            llm = LLM(apiKey=apiKey)
+            pred = llm.LLM_OpenAi(prompt=promptText)
+
+            st.markdown(f"""
+                        <p style="text-align: justify;">
+                        {pred}
+                        </p>
+                        """, unsafe_allow_html=True)
+            
 
     def main(self):
         st.title("Data Analyst Assistant")
         self.sideBar()
-        with st.container():
-            self.userInput()
+        
+        self.userInteraction()
 
 if __name__ == "__main__":
     HomeInterface().main()
